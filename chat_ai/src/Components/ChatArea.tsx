@@ -1,6 +1,8 @@
-import { BsFillMicFill } from "react-icons/bs";
+import { BsFillMicFill, BsStopFill } from "react-icons/bs";
 import { BiSend } from "react-icons/bi";
 import { useEffect, useState } from "react";
+import useWhisper from "@chengsokdara/use-whisper";
+import useSpeechRecognition from "../Hooks/useSpeechRecognition";
 
 interface Message {
   message: string;
@@ -15,14 +17,67 @@ function ChatArea({ socketConn }: ChatAreaProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [botMessage, setBotMessage] = useState<string>("");
+  const [messageCount, setMessageCount] = useState(0);
+  const [socketConnected, setSocketConnected] = useState<boolean>(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [botMessageLoading, setBotMessageLoading] = useState(true);
+
+  const togglePopup = () => {
+    setShowPopup(!showPopup);
+  };
+
+  const {
+    hasRecognitionSupport,
+    isListening,
+    startListening,
+    stopListening,
+    text,
+  } = useSpeechRecognition();
 
   useEffect(() => {
     if (!socketConn) return;
     if (socketConn && socketConn.readyState === WebSocket.OPEN) {
       console.log("Connected");
+      setSocketConnected(true);
     } else {
       console.log("Error connecting socket");
     }
+  }, []);
+
+  useEffect(() => {
+    if (text.length > 0) {
+      setNewMessage((prev) => prev + " " + text);
+      setShowPopup(false);
+    }
+  }, [text]);
+  useEffect(() => {
+    if (socketConn) {
+      let accumulatedText = "";
+
+      socketConn.onmessage = (event) => {
+        const response = JSON.parse(event.data);
+        if (response.event === "text_stream") {
+          const message = response.text;
+          accumulatedText += message;
+
+          if (message.trim() !== "" && message.endsWith(".")) {
+            setBotMessageLoading(false);
+            const botResponse = {
+              message: accumulatedText,
+              isUser: false,
+            };
+            setMessages((prevMessages) => [...prevMessages, botResponse]);
+
+            // Reset the accumulated text
+            accumulatedText = "";
+          }
+        }
+      };
+    }
+
+    // return () => {
+    //   socketConn?.close();
+    // };
   }, [socketConn]);
 
   const sendMessage = () => {
@@ -91,63 +146,26 @@ function ChatArea({ socketConn }: ChatAreaProps) {
 
   const handleSendMessage = () => {
     if (newMessage.trim() === "") return;
+    if (messageCount >= 25) {
+      return;
+    }
     const userMessage: Message = { message: newMessage, isUser: true };
     setMessages([...messages, userMessage]);
     setNewMessage("");
+    setMessageCount((prevCount) => prevCount + 1);
+
     sendMessage();
-    if (socketConn) {
-      socketConn.onmessage = (event) => {
-        const response = JSON.parse(event.data);
-        if (response.event === "text_stream") {
-          const message = response.text;
-          setBotMessage((prev) => (prev += message));
-        }
-        return () => {
-          socketConn?.close();
-        };
-      };
-    }
-    const botMessages: Message = {
-      message: botMessage,
-      isUser: false,
-    };
-    setMessages((prev) => [...prev, botMessages]);
-    setBotMessage("");
   };
 
-  // const handleSendMessage = () => {
-  //   if (newMessage.trim() === "") return;
-  //   const userMessage: Message = { message: newMessage, isUser: true };
-  //   setMessages([...messages, userMessage]);
-  //   setNewMessage("");
-  //   sendMessage();
-  //   socketConn.onmessage = (event) => {
-  //     const response = JSON.parse(event.data);
-  //     console.log(response);
-  //     if (response.event === "new") {
-  //       const botMessage: Message = {
-  //         message: response.data.text,
-  //         isUser: false,
-  //       };
-  //       setMessages((prev) => [...prev, botMessage]);
-  //     }
-  //     return () => {
-  //       socketConn?.close();
-  //     };
-  //   };
-  //   // setMessages((prev) => [...prev, botMessage]);
-  // };
   return (
     <div className="">
       <div className="flex flex-1 h-[calc(100vh-5rem)] p-10 relative">
         {messages.length > 0 ? (
-          <div className="w-full overflow-y-auto relative">
+          <div className="w-full overflow-y-auto relative p-5  scrollbar-thumb-gray-300 scrollbar-thin scrollbar-track-rounded-md scrollbar-track-gray-100 ">
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`mb-2 ${
-                  message.isUser ? "text-right" : "text-left"
-                }`}
+                className={`mb-2 ${message.isUser ? "text-right" : ""}`}
               >
                 <p
                   className={`p-2 rounded-lg ${
@@ -160,6 +178,19 @@ function ChatArea({ socketConn }: ChatAreaProps) {
                 </p>
               </div>
             ))}
+            {/* Conditionally render the loading screen */}
+            {botMessageLoading && (
+              <div className="flex justify-center items-center h-16">
+                <p>Loading...</p>
+              </div>
+            )}
+            {!botMessageLoading && botMessage && (
+              <div className="mb-2 text-right">
+                <p className="p-2 rounded-lg bg-gray-100 text-gray-700 mt-2 inline-block max-w-[70%]">
+                  {botMessage}
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="w-full flex items-center justify-center">
@@ -171,15 +202,42 @@ function ChatArea({ socketConn }: ChatAreaProps) {
       {/* Input area */}
 
       <div className="flex flex-1 items-center justify-center  h-[5rem]">
-        <div className="w-[80%] h-[2.5rem] flex items-center justify-center border border-black p-5 rounded-lg ">
+        <div className="w-[80%] h-[2.5rem] flex items-center justify-center border relative border-black p-5 rounded-lg ">
           <input
             type="text"
             placeholder="Type new questions"
             className="w-full h-full p-5 focus:outline-none font-poppins"
             onChange={(e) => setNewMessage(e.target.value)}
             value={newMessage}
+            onKeyDown={(e) => {
+              if (newMessage.length > 0 && e.key === "Enter") {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
           />
-          <BsFillMicFill className="cursor-pointer mr-5" />
+          <BsFillMicFill
+            className="cursor-pointer mr-5"
+            onClick={togglePopup}
+          />
+          {showPopup && (
+            <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-center items-center bg-black bg-opacity-50">
+              <div className="bg-white rounded-lg p-5">
+                <div className="text-lg font-semibold mb-3">
+                  {isListening ? "Recording..." : "Click to start Recording"}
+                </div>
+                <button
+                  className="btn px-5 py-2 mx-1"
+                  onClick={isListening ? stopListening : startListening}
+                >
+                  {isListening ? <BsStopFill /> : <BsFillMicFill />}
+                </button>
+                <button className="btn px-5 py-2 mx-1" onClick={togglePopup}>
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
           <BiSend className="cursor-pointer" onClick={handleSendMessage} />
         </div>
       </div>
