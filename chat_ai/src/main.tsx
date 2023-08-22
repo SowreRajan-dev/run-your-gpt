@@ -8,7 +8,7 @@ import App from "./App.tsx";
 
 const router = createBrowserRouter([
   {
-    path: "/chat",
+    path: "/",
     element: <App />,
   },
   {

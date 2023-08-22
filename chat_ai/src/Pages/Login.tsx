@@ -28,7 +28,7 @@ function Login() {
         })
       );
 
-      navigate("/chat");
+      navigate("/");
     }
   };
   return (
