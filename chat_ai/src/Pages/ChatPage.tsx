@@ -17,7 +17,8 @@ function ChatPage() {
 
     newSocket.onclose = (event) => {
       console.error("WebSocket connection closed with code: ", event.code);
-      setTimeout(establishWebSocketConnection, 5000); // Attempt to reconnect after 5 seconds
+      // Attempt to reconnect after 5 seconds
+      setTimeout(establishWebSocketConnection, 5000);
     };
   };
   return (

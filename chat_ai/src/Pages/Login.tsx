@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import bcrypt from "bcryptjs";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import React from "react";
+import { ToastContainer, toast } from "react-toastify";
 
 const inputStyle =
   "mt-1 p-2 block w-full rounded border-gray-300 shadow-sm focus:ring focus:outline-none";
@@ -8,7 +10,26 @@ const labelStyle = "block text-sm font-medium text-gray-700 font-poppins";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userLoggedIn, setUserLoggedIn] = useState(false);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userLoggedIn) {
+      toast.success("User logged in successfully", {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+
+      navigate("/");
+    }
+  }, [navigate, userLoggedIn]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -17,6 +38,16 @@ function Login() {
     if (hashedPassword) {
       const passwordMatch = bcrypt.compareSync(password, hashedPassword);
       if (!passwordMatch) {
+        toast.warning("Password is not matched", {
+          position: "bottom-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "dark",
+        });
         return;
       }
       localStorage.setItem(
@@ -27,8 +58,7 @@ function Login() {
           isSignedin: true,
         })
       );
-
-      navigate("/");
+      setUserLoggedIn(true);
     }
   };
   return (
@@ -78,6 +108,7 @@ function Login() {
           </button>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 }

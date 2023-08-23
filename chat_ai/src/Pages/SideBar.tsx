@@ -46,7 +46,7 @@ function SideBar() {
             )
           ) : (
             <>
-              <p className="text-center">Welcome</p>
+              <p className="text-center font-semibold">Welcome</p>
             </>
           )}
         </div>
@@ -55,15 +55,19 @@ function SideBar() {
           {open && <p className="font-[1.5rem] font-poppins">Chat</p>}{" "}
         </div>
       </div>
-      <div className="p-5 mb-10">
-        <div
-          className="w-full flex items-center justify-center cursor-pointer"
-          onClick={handleSignOut}
-        >
-          <BiExit />
-          {open && <p className="font-[1.5rem] font-poppins">Sign out</p>}{" "}
+      {user.isSignedin && (
+        <div className="p-5 mb-10">
+          <div
+            className="w-full flex items-center justify-center cursor-pointer"
+            onClick={handleSignOut}
+          >
+            <BiExit />
+            {open && (
+              <p className="font-[1.5rem] font-poppins">Sign out</p>
+            )}{" "}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

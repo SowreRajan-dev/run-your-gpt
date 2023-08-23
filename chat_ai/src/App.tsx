@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import "./App.css";
 import ChatPage from "./Pages/ChatPage";
 import Layout from "./Pages/Layout";
-import Register from "./Pages/Register";
+import { Navigate } from "react-router-dom";
 
 function App() {
   return (

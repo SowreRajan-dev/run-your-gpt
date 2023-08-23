@@ -21,7 +21,9 @@ function ChatArea({ socketConn }: ChatAreaProps) {
   const [socketConnected, setSocketConnected] = useState<boolean>(false);
   const [showPopup, setShowPopup] = useState(false);
   const [botMessageLoading, setBotMessageLoading] = useState(true);
-
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user")) || { isSignedIn: false }
+  );
   const togglePopup = () => {
     setShowPopup(!showPopup);
   };
@@ -206,7 +208,9 @@ function ChatArea({ socketConn }: ChatAreaProps) {
           <input
             type="text"
             placeholder="Type new questions"
-            className="w-full h-full p-5 focus:outline-none font-poppins"
+            className={`w-full h-full p-5 focus:outline-none font-poppins ${
+              user.isSignedin ? "" : "cursor-not-allowed"
+            }`}
             onChange={(e) => setNewMessage(e.target.value)}
             value={newMessage}
             onKeyDown={(e) => {
@@ -215,6 +219,7 @@ function ChatArea({ socketConn }: ChatAreaProps) {
                 handleSendMessage();
               }
             }}
+            disabled={user.isSignedin ? false : true}
           />
           <BsFillMicFill
             className="cursor-pointer mr-5"

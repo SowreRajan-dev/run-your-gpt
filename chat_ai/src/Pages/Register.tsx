@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const inputStyle =
   "mt-1 p-2 block w-full rounded border-gray-300 shadow-sm focus:ring focus:outline-none";
@@ -10,19 +12,49 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [userRegistered, setUserRegistered] = useState(false);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userRegistered) {
+      toast.success("User registered successfully", {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      setTimeout(() => navigate("/login"), 5000);
+    }
+  }, [userRegistered]);
 
   const handleRegister = (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) return;
+    if (password !== confirmPassword) {
+      toast.warning("Password and confirm password is not same", {
+        position: "bottom-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      return;
+    }
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     localStorage.setItem(email, hashedPassword);
+    setUserRegistered(true);
 
     // Clear the form
     setEmail("");
     setPassword("");
-    navigate("/login");
   };
 
   return (
@@ -105,6 +137,7 @@ function Register() {
           </button>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }
