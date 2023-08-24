@@ -39,3 +39,6 @@ This is a simple chat application with authentication built using React and Reac
 3. If you're a new user, register using the registration page. Otherwise, log in with your credentials.
 4. Once logged in, you'll be redirected to the chat interface, where you can exchange messages with other users.
 5. To log out, click on the "Logout" button.
+
+## Video 
+[chat_ai.webm](https://github.com/GamutInc/run-your-gpt/assets/75199296/e32048b2-6907-4768-8aec-5cbcee89da43)
